@@ -8070,7 +8070,7 @@ uint32 Unit::SpellDamageBonusDone(Unit* victim, SpellSchoolMask schoolMask, Spel
     // Add flat bonus from spell damage creature
     DoneTotal += GetTotalAuraModifierByMiscMask(SPELL_AURA_MOD_DAMAGE_DONE_CREATURE, creatureTypeMask);
 
-    if (spellInfo->HasAttribute(SPELL_ATTR_EX6_IGNORE_CASTER_DAMAGE_MODIFIERS))
+    if (!spellInfo->HasAttribute(SPELL_ATTR_EX6_IGNORE_CASTER_DAMAGE_MODIFIERS))
     {
         // Creature damage
         if (GetTypeId() == TYPEID_UNIT && !((Creature*)this)->IsPet())
@@ -8086,6 +8086,11 @@ uint32 Unit::SpellDamageBonusDone(Unit* victim, SpellSchoolMask schoolMask, Spel
                 // 0 == any inventory type (not wand then)
             {
                 DoneTotalMod *= (i->GetModifier()->m_amount + 100.0f) / 100.0f;
+
+                if (i->GetSpellProto()->Id == 36032 && spellInfo->Id != 30451)
+                {
+                    i->GetHolder()->SetAuraDuration(0);
+                }
             }
         }
 
@@ -8870,9 +8875,14 @@ bool Unit::UnmountEntry(const Aura* aura)
 
 bool Unit::Mount(uint32 displayid, bool auraExists, int32 auraAmount, bool /*isFlyingAura*/, bool /*pendingTaxi*/)
 {
+    //sLog.outError("Unit::Mount start: mounted: %d id: %d taxi: %d", IsMounted(), GetMountID(), IsTaxiFlying());
+
     // Custom mount (non-aura such as taxi or command) overwrites aura mounts
     if (!displayid || (IsMounted() && auraExists && uint32(auraAmount) != GetMountID()))
+    {
+        //sLog.outError("Unit::Mount end: mounted: %d id: %d taxi: %d", IsMounted(), GetMountID(), IsTaxiFlying());
         return false;
+    }
 
     RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_MOUNTING);
     if (!m_isMountOverriden)
@@ -8888,20 +8898,27 @@ bool Unit::Mount(uint32 displayid, bool auraExists, int32 auraAmount, bool /*isF
         SetBaseRunSpeed(1.f); // overriden inside
         UpdateSpeed(MOVE_RUN, true);
     }
+
+    //sLog.outError("Unit::Mount end: mounted: %d id: %d taxi: %d", IsMounted(), GetMountID(), IsTaxiFlying());
     return true;
 }
 
 bool Unit::Unmount(bool auraExists, int32 auraAmount, bool /*isFlyingAura*/)
 {
-    if (!GetMountID())
-        return false;
+    //sLog.outError("Unit::Unmount start: mounted: %d id: %d taxi: %d", IsMounted(), GetMountID(), IsTaxiFlying());
 
-    if (auraExists)
+    if (!GetMountID())
     {
-        // Custom mount (non-aura such as taxi or command) overwrites aura mounts, do not dismount on aura removal
-        if (uint32(auraAmount) != GetMountID() && !m_isMountOverriden)
-            return false;
+        //sLog.outError("Unit::Unmount end: mounted: %d id: %d taxi: %d", IsMounted(), GetMountID(), IsTaxiFlying());
+        return false;
     }
+
+//     if (auraExists)
+//     {
+//         // Custom mount (non-aura such as taxi or command) overwrites aura mounts, do not dismount on aura removal
+//         if (uint32(auraAmount) != GetMountID() && !m_isMountOverriden)
+//             return false;
+//     }
 
     RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_DISMOUNT);
     SetUInt32Value(UNIT_FIELD_MOUNTDISPLAYID, 0);
@@ -8920,6 +8937,7 @@ bool Unit::Unmount(bool auraExists, int32 auraAmount, bool /*isFlyingAura*/)
         UpdateSpeed(MOVE_RUN, true);
     }
 
+    //sLog.outError("Unit::Unmount end: mounted: %d id: %d taxi: %d", IsMounted(), GetMountID(), IsTaxiFlying());
     return true;
 }
 

@@ -5438,6 +5438,11 @@ void Spell::HandleEffect(Unit* pUnitTarget, Item* pItemTarget, GameObject* pGOTa
         m_healingPerEffect[i] = 0;
         m_damagePerEffect[i] = 0;
         damage = CalculateSpellEffectValue(i, unitTarget);
+
+        if (m_spellInfo->Id == 44780)
+        {
+            sLog.outString("Arcane Blast got damage bonus of %d", damage);
+        }
     }
     else
         damage = int32(CalculateSpellEffectValue(i, unitTarget) * DamageMultiplier);
@@ -7541,11 +7546,33 @@ int32 Spell::CalculateSpellEffectDamage(Unit* unitTarget, int32 damage, float da
         case SPELL_DAMAGE_CLASS_NONE:
         case SPELL_DAMAGE_CLASS_MAGIC:
         {
+            if (m_spellInfo->Id == 44780)
+            {
+                sLog.outString("Base Damage: %d", damage);
+            }
+
             // Calculate damage bonus
             if (!m_trueCaster->IsGameObject())
                 damage = m_caster->SpellDamageBonusDone(unitTarget, m_spellSchoolMask, m_spellInfo, effectIndex, damage, SPELL_DIRECT_DAMAGE);
+
+            if (m_spellInfo->Id == 44780)
+            {
+                sLog.outString("With bonus: %d", damage);
+            }
+
             damage *= damageDoneMod;
+
+            if (m_spellInfo->Id == 44780)
+            {
+                sLog.outString("After mod: %d", damage);
+            }
+
             damage = unitTarget->SpellDamageBonusTaken(m_trueCaster->IsGameObject() ? nullptr : m_caster, m_spellSchoolMask, m_spellInfo, effectIndex, damage, SPELL_DIRECT_DAMAGE);
+
+            if (m_spellInfo->Id == 44780)
+            {
+                sLog.outString("Final: %d", damage);
+            }
         }
         break;
     }

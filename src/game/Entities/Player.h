@@ -3012,14 +3012,35 @@ template <class T> void Player::ApplySpellMod(uint32 spellId, SpellModOp op, T& 
     int32 totalpct = 100;
     int32 totalflat = 0;
     std::vector<SpellModifier*> consumedFiniteMods;
+
+    if (spellId == 30451)
+    {
+        sLog.outString("Applying spell mods for Arcane Blast");
+    }
+
     for (SpellModifier* mod : m_spellMods[op])
     {
+
+
         if (mod->op == SPELLMOD_CASTING_TIME || mod->op == SPELLMOD_COST)
             if (T((basevalue + totalflat) * std::max(0, totalpct) / 100) <= 0)
                 break;
 
+        if (spellId == 30451)
+        {
+            sLog.outString("checking spellid:%d", mod->spellId);
+        };
+        
+
         if (!IsAffectedBySpellmod(spellInfo, mod, m_consumedMods))
             continue;
+
+        if (spellId == 30451)
+        {
+            sLog.outString("affected!");
+        };
+
+
         if (mod->type == SPELLMOD_FLAT)
             totalflat += mod->value;
         else if (mod->type == SPELLMOD_PCT)

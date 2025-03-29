@@ -1964,8 +1964,13 @@ bool Player::BuildEnumData(QueryResult* result, WorldPacket& p_data)
 
 bool Player::Mount(uint32 displayid, bool auraExists, int32 auraAmount, bool isFlyingAura, bool pendingTaxi)
 {
+    sLog.outError("Player::Mount start: mounted: %d id: %d taxi: %d", IsMounted(), GetMountID(), IsTaxiFlying());
+
     if (m_pendingMountId)
+    {
+        sLog.outError("Player::Mount end: mounted: %d id: %d taxi: %d", IsMounted(), GetMountID(), IsTaxiFlying());
         return false;
+    }
 
     float height = GetCollisionHeight();
     uint32 newMountId = GetOverridenMountId() ? GetOverridenMountId() : displayid;
@@ -1980,17 +1985,20 @@ bool Player::Mount(uint32 displayid, bool auraExists, int32 auraAmount, bool isF
 
     SendCollisionHeightUpdate(newHeight);
 
+    sLog.outError("Player::Mount end: mounted: %d id: %d taxi: %d", IsMounted(), GetMountID(), IsTaxiFlying());
     return true;
 }
 
 bool Player::Unmount(bool auraExists, int32 auraAmount, bool isFlyingAura)
 {
+    sLog.outError("Player::Unmount start: mounted: %d id: %d taxi: %d", IsMounted(), GetMountID(), IsTaxiFlying());
     float height = GetCollisionHeight();
     float newHeight = CalculateCollisionHeight(0);
 
-    m_pendingMountAura = auraExists;
-    m_pendingMountAuraAmount = auraAmount;
-    m_pendingMountAuraFlying = isFlyingAura;
+    // do not use the input, the player knows
+//     m_pendingMountAura = auraExists;
+//     m_pendingMountAuraAmount = auraAmount;
+//     m_pendingMountAuraFlying = isFlyingAura;
     m_pendingDismount = true;
 
     if (height != newHeight)
@@ -1998,6 +2006,7 @@ bool Player::Unmount(bool auraExists, int32 auraAmount, bool isFlyingAura)
     else
         ResolvePendingUnmount();
 
+    sLog.outError("Player::Unmount end: mounted: %d id: %d taxi: %d", IsMounted(), GetMountID(), IsTaxiFlying());
     return true;
 }
 
