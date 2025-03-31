@@ -450,10 +450,24 @@ void WorldSession::HandleForceSpeedChangeAckOpcodes(WorldPacket& recv_data)
         data << newspeed; // new collision height
         mover->SendMessageToSetExcept(data, _player);
 
-        if (_player->IsPendingDismount())
-            _player->ResolvePendingUnmount();
-        else
-            _player->ResolvePendingMount();
+        switch (_player->GetPendingMountStateSwitch())
+        {
+            case Player::MountStateSwitchEnum::mount:
+            {
+                _player->ResolvePendingMount();
+            }
+            break;
+            case Player::MountStateSwitchEnum::dismount:
+            {
+                _player->ResolvePendingUnmount();
+            }
+            break;
+            default:
+            {
+                sLog.outError("Something's wrong");
+            }
+        }
+            
         return;
     }
 

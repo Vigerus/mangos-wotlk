@@ -2528,6 +2528,10 @@ class Unit : public WorldObject
         virtual bool CanFly() const = 0;
         virtual bool CanWalk() const = 0;
         virtual bool IsFlying() const { return m_movementInfo.HasMovementFlag(MOVEFLAG_FLYING); }
+        virtual bool const HasMountAura() const
+        {
+            return m_modAuras[SPELL_AURA_MOUNTED].size() ? true : false;
+        }
 
         float GetHoverOffset() const
         {

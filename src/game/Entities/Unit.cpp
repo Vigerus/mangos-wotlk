@@ -8883,6 +8883,11 @@ bool Unit::Mount(uint32 displayid, bool auraExists, int32 auraAmount, bool /*isF
     if (auraExists)
         SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_MOUNT);
 
+    if (HasMountAura() != IsMounted())
+    {
+        sLog.outError("FAIL");
+    }
+
     if (GetMountInfo())
     {
         SetBaseRunSpeed(1.f); // overriden inside
@@ -8898,6 +8903,11 @@ bool Unit::Unmount(bool auraExists, int32 auraAmount, bool /*isFlyingAura*/)
 
     if (auraExists)
     {
+        if (HasMountAura() != IsMounted())
+        {
+            sLog.outError("FAIL");
+        }
+
         // Custom mount (non-aura such as taxi or command) overwrites aura mounts, do not dismount on aura removal
         if (uint32(auraAmount) != GetMountID() && !m_isMountOverriden)
             return false;
@@ -8906,6 +8916,11 @@ bool Unit::Unmount(bool auraExists, int32 auraAmount, bool /*isFlyingAura*/)
     RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_DISMOUNT);
     SetUInt32Value(UNIT_FIELD_MOUNTDISPLAYID, 0);
     RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_MOUNT); // always remove even if aura for safety
+
+    if (HasMountAura() != IsMounted())
+    {
+        sLog.outError("FAIL");
+    }
 
     if (auraExists)
     {
@@ -12648,7 +12663,7 @@ void Unit::EndSpline()
 
 void Unit::SendCollisionHeightUpdate(float height)
 {
-    if (IsClientControlled() && IsInWorld())
+    if (IsClientControlled())
     {
         if (Player const* player = GetControllingPlayer())
         {
@@ -12661,6 +12676,8 @@ void Unit::SendCollisionHeightUpdate(float height)
             player->GetSession()->SendPacket(data);
             player->GetSession()->GetAnticheat()->OrderSent(data.GetOpcode(), counter);
             player->GetSession()->IncrementOrderCounter();
+
+            return;
         }
     }
 }

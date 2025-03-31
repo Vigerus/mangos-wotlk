@@ -1129,7 +1129,15 @@ class Player : public Unit
 
         bool ResolvePendingMount();
         bool ResolvePendingUnmount();
-        bool IsPendingDismount() const { return m_pendingDismount; }
+
+        enum class MountStateSwitchEnum
+        {
+            none,
+            mount,
+            dismount
+        };
+
+        MountStateSwitchEnum GetPendingMountStateSwitch() const { return m_pendingMountStateSwitch; }
 
         void ToggleAFK();
         void ToggleDND();
@@ -2996,7 +3004,7 @@ class Player : public Unit
         bool m_pendingMountAura;
         int32 m_pendingMountAuraAmount;
         bool m_pendingMountAuraFlying;
-        bool m_pendingDismount;
+        MountStateSwitchEnum m_pendingMountStateSwitch = MountStateSwitchEnum::none;
         bool m_pendingTaxi;
         bool m_pendingPhaseChange;
 };

@@ -3816,6 +3816,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
 
 void Aura::HandleAuraMounted(bool apply, bool Real)
 {
+    sLog.outError("HandleAuraMounted %d", apply);
     // only at real add/remove aura
     if (!Real)
         return;
@@ -3838,7 +3839,7 @@ void Aura::HandleAuraMounted(bool apply, bool Real)
 
         m_modifier.m_amount = display_id;
 
-        target->Mount(display_id, this, this->GetAmount(), IsSpellHaveAura(GetSpellProto(), SPELL_AURA_MOD_FLIGHT_SPEED_MOUNTED));
+        target->Mount(display_id, true, GetAmount(), IsSpellHaveAura(GetSpellProto(), SPELL_AURA_MOD_FLIGHT_SPEED_MOUNTED));
 
         if (ci->VehicleTemplateId)
         {
@@ -3850,7 +3851,7 @@ void Aura::HandleAuraMounted(bool apply, bool Real)
     }
     else
     {
-        target->Unmount(this, this->GetAmount(), IsSpellHaveAura(GetSpellProto(), SPELL_AURA_MOD_FLIGHT_SPEED_MOUNTED));
+        target->Unmount(true, GetAmount(), IsSpellHaveAura(GetSpellProto(), SPELL_AURA_MOD_FLIGHT_SPEED_MOUNTED));
 
         CreatureInfo const* ci = ObjectMgr::GetCreatureTemplate(m_modifier.m_miscvalue);
         if (ci && target->IsVehicle() && ci->VehicleTemplateId == target->GetVehicleInfo()->GetVehicleEntry()->m_ID)
