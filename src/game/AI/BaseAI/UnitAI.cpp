@@ -337,7 +337,9 @@ void UnitAI::HandleMovementOnAttackStart(Unit* victim, bool targetChange) const
     if (!m_unit->hasUnitState(UNIT_STAT_CAN_NOT_REACT))
     {
         if (m_dismountOnAggro)
+        {
             m_unit->Unmount(); // all ais should unmount here
+        }
 
         MotionMaster* creatureMotion = m_unit->GetMotionMaster();
 

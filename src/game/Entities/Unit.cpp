@@ -8898,19 +8898,27 @@ bool Unit::Mount(uint32 displayid, bool auraExists, int32 auraAmount, bool /*isF
 
 bool Unit::Unmount(bool auraExists, int32 auraAmount, bool /*isFlyingAura*/)
 {
+    bool bHasMountAura = HasMountAura();
+    bool bIsMounted = IsMounted();
+    if (bHasMountAura != bIsMounted)
+    {
+        sLog.outError("Unit::Unmount: HasMountAura != IsMounted mismatch");
+    }
+
     if (!GetMountID())
+    {
+        // no logs here - some systems call it unconditionally to guarantee unmount status like death/fight etc.
         return false;
+    }
 
     if (auraExists)
     {
-        if (HasMountAura() != IsMounted())
-        {
-            sLog.outError("FAIL");
-        }
-
         // Custom mount (non-aura such as taxi or command) overwrites aura mounts, do not dismount on aura removal
         if (uint32(auraAmount) != GetMountID() && !m_isMountOverriden)
+        {
+            sLog.outError("Unit::Unmount: custom mount, not unmounting");
             return false;
+        }
     }
 
     RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_DISMOUNT);
@@ -8919,7 +8927,7 @@ bool Unit::Unmount(bool auraExists, int32 auraAmount, bool /*isFlyingAura*/)
 
     if (HasMountAura() != IsMounted())
     {
-        sLog.outError("FAIL");
+        sLog.outError("Unit::Unmount: HasMountAura != IsMounted mismatch");
     }
 
     if (auraExists)
