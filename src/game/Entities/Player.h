@@ -322,12 +322,13 @@ struct PlayerInfo
 
 struct PvPInfo
 {
-    PvPInfo() : inPvPCombat(false), inPvPEnforcedArea(false), inPvPCapturePoint(false), isPvPFlagCarrier(false), timerPvPRemaining(0), timerPvPContestedRemaining(0) {}
+    PvPInfo() : inPvPCombat(false), inPvPEnforcedArea(false), inPvPCapturePoint(false), isPvPFlagCarrier(false), isSanctuaryOverriden(false), timerPvPRemaining(0), timerPvPContestedRemaining(0) {}
 
     bool inPvPCombat;
     bool inPvPEnforcedArea;
     bool inPvPCapturePoint;
     bool isPvPFlagCarrier;
+    bool isSanctuaryOverriden;
     uint32 timerPvPRemaining;
     uint32 timerPvPContestedRemaining;
 };
@@ -1838,6 +1839,8 @@ class Player : public Unit
         void UpdateAfkReport(time_t currTime);
         void UpdatePvPFlagTimer(uint32 diff);
         void UpdatePvPContestedFlagTimer(uint32 diff);
+
+        void ForceSanctuary(bool state); // abstraction on top of SetPvPSanctuary for zone change
 
         /** todo: -maybe move UpdateDuelFlag+DuelComplete to independent DuelHandler.. **/
         DuelInfo* duel;

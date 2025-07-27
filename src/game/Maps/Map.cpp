@@ -118,10 +118,9 @@ GenericTransport* Map::GetTransport(ObjectGuid guid)
             return transport;
         }
     }
-    if (guid.GetEntry())
-        if (GameObject* go = GetGameObject(guid))
-            if (go->IsTransport())
-                return static_cast<GenericTransport*>(go);
+    if (GameObject* go = GetGameObject(guid))
+        if (go->IsTransport())
+            return static_cast<GenericTransport*>(go);
     return nullptr;
 }
 
@@ -355,7 +354,7 @@ template<>
 void Map::AddToGrid(Creature* obj, NGridType* grid, Cell const& cell)
 {
     // add to world object registry in grid
-    if (obj->IsPet())
+    if (obj->IsPet() && obj->IsPlayerControlled())
     {
         (*grid)(cell.CellX(), cell.CellY()).AddWorldObject<Creature>(obj);
         obj->SetCurrentCell(cell);
@@ -399,7 +398,7 @@ template<>
 void Map::RemoveFromGrid(Creature* obj, NGridType* grid, Cell const& cell)
 {
     // remove from world object registry in grid
-    if (obj->IsPet())
+    if (obj->IsPet() && obj->IsPlayerControlled())
     {
         (*grid)(cell.CellX(), cell.CellY()).RemoveWorldObject<Creature>(obj);
     }
@@ -1260,13 +1259,15 @@ void Map::Remove(T* obj, bool remove)
         return;
     }
 
+    // Note for grid unload: Entities can teleport around at the time of unload hence currently creatures can happen to call map remove on an unloaded grid
+    // pre-visibility code didnt need to do much cleanup, but now we need to clean up lists we keep as part of internal map cycle
+    // possibly solved in future by despawning creature in place instead of teleporting around
     Cell cell(p);
-    if (!remove && !loaded(GridPair(cell.data.Part.grid_x, cell.data.Part.grid_y)))
-        return;
+    bool gridLoaded = loaded(GridPair(cell.data.Part.grid_x, cell.data.Part.grid_y));
 
     DEBUG_FILTER_LOG(LOG_FILTER_CREATURE_MOVES, "Remove %s from grid[%u,%u]", obj->GetGuidStr().c_str(), cell.data.Part.grid_x, cell.data.Part.grid_y);
     NGridType* grid = getNGrid(cell.GridX(), cell.GridY());
-    MANGOS_ASSERT(grid != nullptr);
+    MANGOS_ASSERT(!gridLoaded || grid != nullptr);
 
     if (obj->isActiveObject())
         RemoveFromActive(obj);
@@ -1286,7 +1287,11 @@ void Map::Remove(T* obj, bool remove)
     m_objectsToClientMovementUpdate.erase(obj);
     m_visibilityAdded.erase(obj);
 
-    RemoveFromGrid(obj, grid, cell);
+    if constexpr (std::is_same_v<T, Unit>)
+        m_waypointingNpcs.erase(obj);
+
+    if (gridLoaded)
+        RemoveFromGrid(obj, grid, cell);
 
     AddUpdateRemoveObject(obj->GetClientGuidsIAmAt(), obj->GetObjectGuid());
     for (auto& clientGuid : obj->GetClientGuidsIAmAt())
@@ -1990,9 +1995,9 @@ void Map::AddToActive(WorldObject* obj)
     EnsureGridLoaded(cell);
 
     // also not allow unloading spawn grid to prevent creating creature clone at load
-    if (obj->GetTypeId() == TYPEID_UNIT)
+    if (obj->IsCreature())
     {
-        Creature* c = (Creature*)obj;
+        Creature* c = static_cast<Creature*>(obj);
 
         if (!c->IsPet() && c->HasStaticDBSpawnData())
         {
@@ -2025,9 +2030,9 @@ void Map::RemoveFromActive(WorldObject* obj)
         m_activeNonPlayers.erase(obj);
 
     // also allow unloading spawn grid
-    if (obj->GetTypeId() == TYPEID_UNIT)
+    if (obj->IsCreature())
     {
-        Creature* c = (Creature*)obj;
+        Creature* c = static_cast<Creature*>(obj);
 
         if (!c->IsPet() && c->HasStaticDBSpawnData())
         {
@@ -2881,7 +2886,7 @@ void Map::SendObjectUpdates()
             for (Player* player : visData.second)
                 visData.first->BuildCreateDataForPlayer(player, update_players, false);
 
-            if (visData.first->IsUnit())
+            if (!visData.second.empty() && visData.first->IsUnit())
             {
                 WorldPacket packet = Player::BuildAurasForTarget(static_cast<Unit const*>(visData.first));
                 for (Player* player : visData.second)
@@ -2890,6 +2895,8 @@ void Map::SendObjectUpdates()
                     updateDataData->second.AddAfterCreatePacket(packet);
                 }
             }
+
+            visData.first->SetItsNewObject(false);
         }
     }
 

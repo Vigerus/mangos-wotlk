@@ -7703,18 +7703,12 @@ void Player::UpdateZone(uint32 newZone, uint32 newArea, bool force)
     if (pvpInfo.inPvPEnforcedArea)                              // in hostile area
         UpdatePvP(true);
 
-    if (zone->flags & AREA_FLAG_SANCTUARY) // in sanctuary
+    if (!pvpInfo.isSanctuaryOverriden)
     {
-        SetPvPSanctuary(true);
-
-        UpdatePvP(false, true);
-
-        if (sWorld.IsFFAPvPRealm())
-            SetPvPFreeForAll(false);
-    }
-    else
-    {
-        SetPvPSanctuary(false);
+        if (zone->flags & AREA_FLAG_SANCTUARY) // in sanctuary
+            ForceSanctuary(true);
+        else
+            ForceSanctuary(false);
     }
 
     if (zone->flags & AREA_FLAG_CAPITAL)                    // in capital city
@@ -19382,6 +19376,21 @@ void Player::UpdatePvPContestedFlagTimer(uint32 diff)
 
     // Timer tries to drop flag if all conditions are met and time has passed
     UpdatePvPContested(false);
+}
+
+void Player::ForceSanctuary(bool state)
+{
+    if (state)
+    {
+        SetPvPSanctuary(true);
+
+        UpdatePvP(false, true);
+
+        if (sWorld.IsFFAPvPRealm())
+            SetPvPFreeForAll(false);
+    }
+    else
+        SetPvPSanctuary(false);
 }
 
 void Player::UpdateDuelFlag(time_t currTime)

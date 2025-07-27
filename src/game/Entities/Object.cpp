@@ -363,10 +363,10 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 updateFlags) const
 
             *data << wo->GetOrientation();
 
-            if (GetTypeId() == TYPEID_CORPSE)
-                *data << float(wo->GetOrientation());
+            if (transport)
+                *data << float(wo->GetTransOffsetO());
             else
-                *data << float(0);
+                *data << float(wo->GetOrientation());
         }
         else
         {
@@ -1278,6 +1278,14 @@ void Object::BuildCreateDataForPlayer(Player* pl, UpdateDataMapType& update_play
 
     if (auras && IsUnit())
         iter->second.AddAfterCreatePacket(Player::BuildAurasForTarget(static_cast<Unit const*>(this)));
+}
+
+void Object::SetUpdateFlag(ObjectUpdateFlags flag, bool add)
+{
+    if (add)
+        m_updateFlag |= flag;
+    else
+        m_updateFlag &= ~flag;
 }
 
 void Object::BuildOutOfRangeDataForPlayer(Player* pl, UpdateDataMapType& update_players, ObjectGuid oorObject)
@@ -2336,6 +2344,8 @@ Creature* WorldObject::SummonCreature(TempSpawnSettings settings, Map* map, uint
                 creature->SetWalk(false);
             if (templateData->IsHovering())
                 creature->SetHover(true);
+            if (templateData->IsGravityDisabled())
+                creature->SetLevitate(true);
             relayId = templateData->relayId;
             if (templateData->stringId)
                 creature->SetStringId(templateData->stringId, true);
@@ -2793,9 +2803,6 @@ void WorldObject::UpdateVisibility(UpdateDataMapType& update_players)
     Cell::VisitWorldObjects(this, notifier, GetVisibilityData().GetVisibilityDistance());
     GetMap()->AddCreateAtClientObjects(notifier.i_playerSet, this);
     ClearUpdateMask(false);
-
-    if (ItsNewObject())
-        SetItsNewObject(false);
 }
 
 bool WorldObject::IsControlledByPlayer() const
